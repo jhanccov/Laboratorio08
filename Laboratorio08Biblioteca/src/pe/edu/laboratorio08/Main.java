@@ -7,6 +7,7 @@ import java.util.Scanner;
 public class Main {
 
 	static ArrayList<Libro> libros = new ArrayList<>();
+	static ArrayList<Prestamo> prestamos = new ArrayList<>();
 	static Scanner sc = new Scanner(System.in);
 
 	public static void main(String[] args) {
@@ -16,7 +17,7 @@ public class Main {
 
 		int opcion = 0;
 
-		while (opcion != 6) {
+		while (opcion != 10) {
 			mostrarMenu();
 			opcion = leerEntero("Seleccione una opción: ");
 			System.out.println();
@@ -38,6 +39,18 @@ public class Main {
 				eliminarLibro();
 				break;
 			case 6:
+				registrarPrestamo();
+				break;
+			case 7:
+				listarPrestamos();
+				break;
+			case 8:
+				registrarDevolucion();
+				break;
+			case 9:
+				listarLibrosDisponibles();
+				break;
+			case 10:
 				System.out.println("Gracias por usar el sistema.");
 				break;
 			default:
@@ -55,10 +68,14 @@ public class Main {
 		System.out.println();
 		System.out.println("1. Registrar libro");
 		System.out.println("2. Listar libros");
-		System.out.println("3. Buscar libro por código");
-		System.out.println("4. Modificar información de libro");
+		System.out.println("3. Buscar libro");
+		System.out.println("4. Modificar libro");
 		System.out.println("5. Eliminar libro");
-		System.out.println("6. Salir");
+		System.out.println("6. Registrar préstamo");
+		System.out.println("7. Listar préstamos");
+		System.out.println("8. Registrar devolución");
+		System.out.println("9. Listar libros disponibles");
+		System.out.println("10. Salir");
 		System.out.println();
 	}
 
@@ -149,8 +166,121 @@ public class Main {
 			return;
 		}
 
+		if (tienePrestamoActivo(libros.get(posicion))) {
+			System.out.println("No se puede eliminar: el libro tiene un préstamo pendiente de devolución.");
+			return;
+		}
+
 		libros.remove(posicion);
 		System.out.println("¡Libro eliminado correctamente!");
+	}
+
+	static void registrarPrestamo() {
+		System.out.println("REGISTRO DE PRÉSTAMO");
+		System.out.println();
+
+		String codigoPrestamo = leerTexto("Código del préstamo: ");
+		if (buscarPrestamo(codigoPrestamo) != null) {
+			System.out.println("Error: ya existe un préstamo con el código " + codigoPrestamo + ".");
+			return;
+		}
+
+		String codigoLibro = leerTexto("Código del libro: ");
+		Libro libro = buscarPorCodigo(codigoLibro);
+		if (libro == null) {
+			System.out.println("Error: no existe un libro con el código " + codigoLibro + ".");
+			return;
+		}
+
+		System.out.println();
+		System.out.println("Libro encontrado: " + libro.getTitulo());
+		System.out.println();
+
+		if (tienePrestamoActivo(libro)) {
+			System.out.println("Error: el libro ya se encuentra prestado.");
+			return;
+		}
+
+		String usuario = leerTexto("Nombre del usuario: ");
+		String fecha = leerFecha("Fecha del préstamo (dd/MM/yyyy): ");
+
+		Prestamo prestamo = new Prestamo(codigoPrestamo, libro, usuario, fecha, false);
+		prestamos.add(prestamo);
+
+		System.out.println();
+		System.out.println("¡Préstamo registrado correctamente!");
+	}
+
+	static void listarPrestamos() {
+		System.out.println("LISTADO DE PRÉSTAMOS");
+		System.out.println();
+
+		if (prestamos.isEmpty()) {
+			System.out.println("No hay préstamos registrados.");
+			return;
+		}
+
+		for (Prestamo prestamo : prestamos) {
+			System.out.println(prestamo);
+			System.out.println();
+		}
+		System.out.println("Total de préstamos: " + prestamos.size());
+	}
+
+	static void registrarDevolucion() {
+		String codigo = leerTexto("Código del préstamo a devolver: ");
+		Prestamo prestamo = buscarPrestamo(codigo);
+
+		System.out.println();
+		if (prestamo == null) {
+			System.out.println("Error: no existe un préstamo con el código " + codigo + ".");
+			return;
+		}
+
+		if (prestamo.isDevuelto()) {
+			System.out.println("Error: este préstamo ya fue devuelto.");
+			return;
+		}
+
+		prestamo.setDevuelto(true);
+		System.out.println("¡Devolución registrada correctamente!");
+		System.out.println();
+		System.out.println("El libro vuelve a estar disponible.");
+	}
+
+	static void listarLibrosDisponibles() {
+		System.out.println("LIBROS DISPONIBLES");
+		System.out.println();
+
+		int contador = 0;
+		for (Libro libro : libros) {
+			if (!tienePrestamoActivo(libro)) {
+				System.out.println(libro.getCodigo() + " - " + libro.getTitulo());
+				contador++;
+			}
+		}
+
+		if (contador == 0) {
+			System.out.println("No hay libros disponibles.");
+		}
+	}
+
+	static boolean tienePrestamoActivo(Libro libro) {
+		for (Prestamo prestamo : prestamos) {
+			if (prestamo.getLibro() == libro && !prestamo.isDevuelto()) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	static Prestamo buscarPrestamo(String codigo) {
+		for (Prestamo prestamo : prestamos) {
+			if (prestamo.getCodigoPrestamo().equalsIgnoreCase(codigo)) {
+				return prestamo;
+			}
+		}
+		return null;
 	}
 
 	static Libro buscarPorCodigo(String codigo) {
@@ -172,6 +302,15 @@ public class Main {
 			}
 		}
 		return texto;
+	}
+
+	static String leerFecha(String mensaje) {
+		String fecha = leerTexto(mensaje);
+		while (!fecha.matches("\\d{2}/\\d{2}/\\d{4}")) {
+			System.out.println("La fecha debe tener el formato dd/MM/yyyy.");
+			fecha = leerTexto(mensaje);
+		}
+		return fecha;
 	}
 
 	static int leerEntero(String mensaje) {
