@@ -7,3 +7,4 @@ Tema: Sistema de gestión de una biblioteca
 ## Avance
 
 - Ejercicio 1: registro y listado básico de libros con la clase JavaBean `Libro` y un `ArrayList<Libro>`.
+- Ejercicio 2: menú con `Scanner` y operaciones CRUD (registrar, listar, buscar, modificar y eliminar) con validaciones.
